@@ -420,4 +420,4 @@ export interface ScheduledContent {
     title: string;
     description?: string;
     status: 'idea' | 'planned' | 'filming' | 'editing' | 'uploaded';
-}
+} 
