@@ -431,3 +431,9 @@ export interface ScheduledContent {
     description?: string;
     status: 'idea' | 'planned' | 'filming' | 'editing' | 'uploaded';
 }
+export interface SubscriptionDetails {
+    plan: string;
+    status: 'active' | 'inactive' | 'trial';
+    startDate: string;
+    endDate: string;
+}
