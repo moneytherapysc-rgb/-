@@ -1,4 +1,11 @@
-// types.ts 파일 전체 코드 (Auth Context 확장 적용 완료)
+// types.ts 파일 전체 코드 (Auth Context 확장 및 AdminDashboard 타입 통합 완료)
+
+// SubscriptionDetails 인터페이스 추가 (AdminDashboard에서 사용됨)
+export interface SubscriptionDetails {
+    status: 'active' | 'inactive' | 'trial';
+    plan: string; // 예: '1month', '3months'
+    endDate: string; // 구독 종료일
+}
 
 export interface YouTubeChannel {
     id: string;
@@ -223,28 +230,29 @@ export interface User {
     joinedAt: string;
     isAdmin: boolean;
 
-    // 💡 [추가되어야 할 속성들] 타입스크립트 오류 해결!
+    // 💡 [AdminDashboard 오류 해결] user.subscription 접근 허용
+    subscription?: SubscriptionDetails; 
+    
+    // 💡 [AuthContext 구독 로직]
     isCouponUsed?: boolean;       // 2주 쿠폰 사용 여부
     couponUsedAt?: string;        // 쿠폰 사용 시작일 (YYYY-MM-DD 형식)
     hasPaidSubscription?: boolean; // 유료 결제 구독 여부
 }
 
-// AuthContextType에도 applyCoupon 함수 정의를 추가해야 합니다.
+// AuthContextType 인터페이스 (모든 컴포넌트 오류 해결을 위한 타입 확장)
 export interface AuthContextType {
-    user: User | null;
-    isAuthenticated: boolean;
-    isSubscribed: boolean;
-    isLoading: boolean;
-    isAdmin: boolean;
-    // ... 기존 함수들 ...
+    user: User | null; // 현재 인증된 사용자 정보
+    isAuthenticated: boolean; // 로그인 상태
+    isSubscribed: boolean; // 구독 상태 (가장 중요)
+    isLoading: boolean; // 초기 인증 상태 로딩 중인지 여부
     
-    // 💡 [추가되어야 할 함수] applyCoupon 정의
-    applyCoupon: (couponCode: string) => Promise<boolean>;
-    
-    // ... 기타 함수 ...
-    signIn: (credentials: any) => Promise<void>;
+    // AuthContext 기본 함수들
+    signIn: (credentials: any) => Promise<void>; 
     signOut: () => Promise<void>;
-    updateSubscriptionStatus: (status: boolean) => void;
+    updateSubscriptionStatus: (status: boolean) => void; 
+
+    // Admin Dashboard 및 UI 상호작용 함수
+    isAdmin: boolean;
     login: (credentials: any) => Promise<void>;
     signup: (data: any) => Promise<void>;
     logout: () => Promise<void>;
@@ -252,30 +260,9 @@ export interface AuthContextType {
     updateUserSubscription: (planId: string) => Promise<void>;
     getAllUsers: () => Promise<User[]>;
     deleteUser: (userId: string) => Promise<void>;
-}
-
-// AuthContextType 인터페이스 (모든 컴포넌트 오류 해결을 위한 타입 확장)
-export interface AuthContextType {
-    user: User | null; // 현재 인증된 사용자 정보
-    isAuthenticated: boolean; // 로그인 상태
-    isSubscribed: boolean; // 구독 상태
-    isLoading: boolean; // 초기 인증 상태 로딩 중인지 여부
-    signIn: (credentials: any) => Promise<void>; // 기본 로그인 함수
-    signOut: () => Promise<void>; // 기본 로그아웃 함수
-    updateSubscriptionStatus: (status: boolean) => void; // 구독 상태 업데이트 함수
-
-    // 👇👇👇 TS2339 오류 해결을 위해 추가된 속성 및 함수 👇👇👇
-    isAdmin: boolean; // Sidebar, InstructionModal, NoticeBoardView 오류 해결
-    login: (credentials: any) => Promise<void>; // LoginModal 오류 해결
-    signup: (data: any) => Promise<void>; // SignupModal 오류 해결
-    logout: () => Promise<void>; // Sidebar 오류 해결
-    changePassword: (data: any) => Promise<void>; // ProfileModal 오류 해결
-    updateUserSubscription: (planId: string) => Promise<void>; // PricingModal 오류 해결
-
-    // AdminDashboard 관련 함수
-    getAllUsers: () => Promise<User[]>; // AdminDashboard 오류 해결
-    deleteUser: (userId: string) => Promise<void>; // AdminDashboard 오류 해결
-    // 👆👆👆 TS2339 오류 해결을 위해 추가된 속성 및 함수 👆👆👆
+    
+    // 쿠폰 로직 함수
+    applyCoupon: (couponCode: string) => Promise<boolean>;
 }
 
 export interface Coupon {

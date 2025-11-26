@@ -32,14 +32,6 @@ const BrainIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5a3 3 0 1 0-7.35 1.48 5.5 5.5 0 0 0 .58 8.8 5 5 0 0 0 9.89 0 5.5 5.5 0 0 0 .58-8.8A3 3 0 1 0 12 5"/><path d="M10 20a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v2h4z"/><path d="M14 20a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2h-4z"/><path d="M14 17a3 3 0 0 0-6 0"/><path d="M12 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
 );
 
-// 로딩 스피너 아이콘 (Tailwind CSS 애니메이션 필요)
-const SpinnerIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} className="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);
-
 
 // --- 1.3 Services Mock ---
 const getInstructions = (): SystemInstruction[] => [
@@ -47,18 +39,8 @@ const getInstructions = (): SystemInstruction[] => [
     { id: '2', name: '교육 콘텐츠 기획자', content: '당신은 복잡한 지식을 쉽고 재미있게 전달하는 교육 콘텐츠 기획자입니다. 시청자가 하나의 지식을 얻어갈 수 있도록 3가지 아이디어를 생성합니다.', isActive: false },
 ];
 
-/**
- * [💡보안 강화 적용] 이 함수는 Mock이며, 실제 API 호출 시에는 서버에서 구독 상태를 검증해야 합니다.
- * isSubscribed 매개변수는 서버 측에서 인증 토큰을 통해 구독 상태를 확인하는 과정을 모의 적용합니다.
- */
-const generateShortsIdeas = async (keyword: string, instruction: string | undefined, isSubscribed: boolean): Promise<ShortsIdea[]> => {
-    // 🚨 서버 측 paywall 검증을 모의 적용합니다. 클라이언트의 우회 요청을 여기서 차단합니다.
-    if (!isSubscribed) {
-        // 실제로는 403 Forbidden 응답이 와야 합니다.
-        throw new Error("ERR_PAYWALL_ENFORCED: 구독 정보가 확인되지 않아 기능을 사용할 수 없습니다. (서버 측 Paywall 모의 적용)");
-    }
-    
-    // API 호출 대신 더미 데이터를 1.5초 후에 반환하는 Mock 함수
+const generateShortsIdeas = async (keyword: string, instruction: string | undefined): Promise<ShortsIdea[]> => {
+    // API 호출 대신 더미 데이터를 5초 후에 반환하는 Mock 함수
     await new Promise(resolve => setTimeout(resolve, 1500)); 
 
     const baseTitle = `${keyword}로 떡상하는 방법`;
@@ -91,76 +73,47 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isSubscribed: boolean;
     isLoading: boolean;
-    setIsSubscribed: (isSubscribed: boolean) => void; // 구독 상태를 변경하는 함수 추가
 }
 
+// 실제 환경에서는 Context Provider가 필요하지만, 단일 파일이므로 Hook만 정의합니다.
 const useAuth = (): AuthContextType => {
     // 실제 서비스의 인증 상태를 시뮬레이션합니다.
-    const [auth, setAuth] = useState<Omit<AuthContextType, 'setIsSubscribed'>>({
+    const [auth, setAuth] = useState<AuthContextType>({
         isAuthenticated: true, // 로그인 상태 가정
         isSubscribed: false,    // **테스트를 위해 기본 false로 설정하여 PaywallScreen이 보이도록 합니다.**
         isLoading: false,      // 로딩 완료 가정
     });
 
-    // 구독 상태를 변경하는 함수 구현
-    const setIsSubscribed = (value: boolean) => {
-        setAuth(prev => ({ ...prev, isSubscribed: value }));
-        console.log(`[AUTH MOCK] 구독 상태가 ${value}로 변경되었습니다.`);
-    };
+    useEffect(() => {
+        // 실제 API 호출 없이, 2초 후에 구독 상태를 true로 바꿔서 Paywall을 해제하는 Mock 로직을 추가할 수 있습니다.
+        // setTimeout(() => setAuth(prev => ({ ...prev, isSubscribed: true })), 5000);
+    }, []);
 
-    return { ...auth, setIsSubscribed };
+    return auth;
 };
 
 // --- 1.5 CouponModal Mock (PaywallScreen의 종속성) ---
 interface CouponModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubscribeSuccess: () => void; // 구독 성공 시 호출될 콜백 추가
 }
 
-const CouponModal: React.FC<CouponModalProps> = ({ isOpen, onClose, onSubscribeSuccess }) => {
+const CouponModal: React.FC<CouponModalProps> = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     const [couponCode, setCouponCode] = useState('');
     const [resultMessage, setResultMessage] = useState('');
-    // 💡 UI 잠금 로직을 위해 isProcessing 상태 추가
-    const [isProcessing, setIsProcessing] = useState(false);
 
-    const handleRegister = async (e: React.FormEvent) => {
+    const handleRegister = (e: React.FormEvent) => {
         e.preventDefault();
-        if (isProcessing || !couponCode.trim()) return;
-
-        setIsProcessing(true); // 로딩 시작
-        setResultMessage('쿠폰 정보 확인 중...');
-
-        try {
-            // 🚨 실제 서버 통신 모의
-            await new Promise(resolve => setTimeout(resolve, 1500)); 
-
-            // Mock 로직: 성공/실패 시나리오 시뮬레이션
-            if (couponCode.toLowerCase().includes('fail')) {
-                 setResultMessage('오류: 유효하지 않거나 이미 사용된 쿠폰입니다.');
-            } else {
-                 setResultMessage(`[성공] 쿠폰 코드 '${couponCode}'가 등록되었습니다. 2주 무료 체험이 시작됩니다!`);
-                 
-                 // ✅ 최종 보강: 구독 상태 업데이트
-                 onSubscribeSuccess(); 
-                 
-                 setTimeout(() => {
-                    onClose();
-                    setCouponCode('');
-                    setResultMessage('');
-                 }, 1000);
-                 return; 
-            }
-
-        } catch (error) {
-            console.error('Coupon registration failed:', error);
-            setResultMessage('서버 통신 중 예상치 못한 오류가 발생했습니다.');
-        } finally {
-            // 에러 발생 시에만 처리 상태를 해제
-            setIsProcessing(false); 
-        }
+        setResultMessage(`쿠폰 코드 '${couponCode}' 등록을 시도했습니다. (Mock)`);
+        // 실제 로직: API 호출 후 구독 상태 업데이트
+        // Mock에서는 닫는 것만 처리
+        setTimeout(() => {
+            onClose();
+            setCouponCode('');
+            setResultMessage('');
+        }, 2000);
     };
 
     return (
@@ -168,7 +121,7 @@ const CouponModal: React.FC<CouponModalProps> = ({ isOpen, onClose, onSubscribeS
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-md p-6 border-t-4 border-purple-500">
                 <div className="flex justify-between items-start mb-4">
                     <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">쿠폰 등록</h3>
-                    <button onClick={onClose} disabled={isProcessing} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-50">
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -185,25 +138,18 @@ const CouponModal: React.FC<CouponModalProps> = ({ isOpen, onClose, onSubscribeS
                         placeholder="쿠폰 코드 입력 (예: FREE2WEEKS)"
                         className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-purple-500 focus:border-purple-500 dark:bg-slate-800 dark:text-white"
                         required
-                        disabled={isProcessing}
                     />
                     <button
                         type="submit"
-                        disabled={isProcessing || !couponCode.trim()}
-                        className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors disabled:bg-purple-400 disabled:cursor-not-allowed flex items-center justify-center"
+                        disabled={!couponCode.trim()}
+                        className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors disabled:bg-purple-400"
                     >
-                        {/* 💡 로딩 상태에 따라 텍스트 및 스피너 표시 */}
-                        {isProcessing ? (
-                            <>
-                                <SpinnerIcon className="w-5 h-5 mr-2 text-white" />
-                                <span>등록 중...</span>
-                            </>
-                        ) : '등록하기'}
+                        등록하기
                     </button>
                 </form>
 
                 {resultMessage && (
-                    <div className={`mt-4 p-3 text-sm rounded-lg ${resultMessage.includes('성공') ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'}`}>
+                    <div className="mt-4 p-3 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-lg">
                         {resultMessage}
                     </div>
                 )}
@@ -212,13 +158,12 @@ const CouponModal: React.FC<CouponModalProps> = ({ isOpen, onClose, onSubscribeS
     );
 };
 
-// --- 1.6 PaywallScreen (onSubscribeSuccess prop 추가) ---
+// --- 1.6 PaywallScreen (사용자가 제공한 코드로 업데이트) ---
 interface PaywallScreenProps {
     featureName: string; // 어떤 기능에 대한 Paywall인지 명시
-    onSubscribeSuccess: () => void; // 구독 성공 콜백 추가
 }
 
-const PaywallScreen: React.FC<PaywallScreenProps> = ({ featureName, onSubscribeSuccess }) => {
+const PaywallScreen: React.FC<PaywallScreenProps> = ({ featureName }) => {
     const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
     
     // LightningIcon을 사용하여 유료 기능임을 시각적으로 강조
@@ -255,7 +200,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = ({ featureName, onSubscribeS
             {/* 요금제 페이지 이동 버튼 */}
             <a 
                 href="/pricing" // 실제 요금제 페이지 경로로 변경하세요.
-                onClick={(e) => { e.preventDefault(); console.log("요금제 페이지로 이동 (Mock)"); }}
+                onClick={(e) => { e.preventDefault(); console.log("요금제 페이지로 이동 (Mock)"); alert("⚠️ 실제 서비스에서는 요금제 페이지로 이동합니다."); }}
                 className="text-blue-400 hover:text-blue-300 underline text-sm mt-2"
             >
                 또는, 요금제 선택 후 즉시 구독 시작하기
@@ -265,7 +210,6 @@ const PaywallScreen: React.FC<PaywallScreenProps> = ({ featureName, onSubscribeS
             <CouponModal 
                 isOpen={isCouponModalOpen} 
                 onClose={() => setIsCouponModalOpen(false)} 
-                onSubscribeSuccess={onSubscribeSuccess} // 콜백을 CouponModal에 전달
             />
         </div>
     );
@@ -278,7 +222,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = ({ featureName, onSubscribeS
 
 const ShortsGeneratorView: React.FC = () => {
     // 💡 useAuth에서 구독 및 인증 상태를 가져옵니다.
-    const { isAuthenticated, isSubscribed, isLoading: isAuthLoading, setIsSubscribed } = useAuth();
+    const { isAuthenticated, isSubscribed, isLoading: isAuthLoading } = useAuth();
 
     const [keyword, setKeyword] = useState('');
     const [isLoading, setIsLoading] = useState(false); // 기능 자체의 로딩 상태
@@ -300,7 +244,11 @@ const ShortsGeneratorView: React.FC = () => {
         e.preventDefault();
         if (!keyword.trim()) return;
         
-        // 최상단 Paywall 컴포넌트 렌더링으로 이미 차단되므로, 버튼 이벤트에서는 추가적인 UI 에러 체크를 생략합니다.
+        // 🚨 [Paywall Guard] 이미 위에서 차단하지만, 버튼 이벤트에서도 이중 체크합니다.
+        if (!isSubscribed) {
+            setError("프리미엄 기능입니다. 구독 상태를 확인해 주세요.");
+            return;
+        }
 
         setIsLoading(true);
         setError(null);
@@ -308,11 +256,12 @@ const ShortsGeneratorView: React.FC = () => {
 
         try {
             const selectedContent = instructions.find(i => i.id === selectedInstructionId)?.content;
-            // 🚨 보안 강화를 위해 isSubscribed 상태를 서비스 레이어로 전달하여 서버 측 검증을 모의합니다.
-            const result = await generateShortsIdeas(keyword.trim(), selectedContent, isSubscribed); 
+            // Mock generateShortsIdeas를 호출합니다.
+            const result = await generateShortsIdeas(keyword.trim(), selectedContent);
             setIdeas(result);
         } catch (err: any) {
-            // 서버 측 paywall 거부 메시지를 사용자에게 표시합니다.
+            // navigator.clipboard.writeText는 iframe에서 보안 문제로 인해 실패할 수 있습니다.
+            // 성공/실패 메시지 대신 콘솔에만 기록합니다.
             setError(err.message || '아이디어 생성 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
@@ -327,6 +276,7 @@ const ShortsGeneratorView: React.FC = () => {
             console.log('클립보드에 대본이 복사되었습니다!');
         }).catch(err => {
             console.error('클립보드 복사 실패:', err);
+            // 사용자에게 오류를 알리는 대신 console에만 기록합니다.
         });
     };
 
@@ -347,11 +297,7 @@ const ShortsGeneratorView: React.FC = () => {
     // 3. 비구독자 및 체험 기간 만료 사용자 차단
     if (!isSubscribed) {
         // PaywallScreen 컴포넌트를 렌더링하여 쿠폰 등록을 유도합니다.
-        // 구독 성공 시 setIsSubscribed(true)를 호출하도록 콜백을 전달합니다.
-        return <PaywallScreen 
-            featureName="AI 쇼츠 대본 생성" 
-            onSubscribeSuccess={() => setIsSubscribed(true)} 
-        />;
+        return <PaywallScreen featureName="AI 쇼츠 대본 생성" />;
     }
 
     // ------------------------------------------------------------------
@@ -406,7 +352,10 @@ const ShortsGeneratorView: React.FC = () => {
                     >
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
-                                <SpinnerIcon className="w-5 h-5 text-white"/>
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
                                 <span>생성 중...</span>
                             </div>
                         ) : '대본 생성'}
