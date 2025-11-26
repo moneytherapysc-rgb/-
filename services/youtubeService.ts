@@ -859,15 +859,14 @@ export const generateAIImage = async (prompt: string, aspectRatio: string): Prom
     throw new Error("이미지 생성에 실패했습니다.");
 };
 
-export const editAIImage = async (imageBase64: string, prompt: string): Promise<string> => {
-    const ai = await initGoogleClient();
-    
-// services/youtubeService.ts 파일의 해당 부분 (865행 근처)
+// services/youtubeService.ts (862행부터 시작하는 블록을 대체)
 
 export const editAIImage = async (imageBase64: string, prompt: string): Promise<string> => {
-  const ai = await initGoogleApiClient();
-  
-  // 💡 수정된 부분: await ai.models.generateContent() 호출 전체에 as any를 적용하여 타입 검사 무시
+  // 1. 함수 이름 오타 수정 완료
+  const ai = await initGoogleClient();
+
+  // 2. response 변수 선언 및 generateContent 호출
+  //    호출 함수에 'as any'를 적용하여 타입 오류를 무시합니다.
   const response = await (ai.models.generateContent as any)({
     model: 'gemini-2.5-flash-image',
     contents: {
@@ -875,34 +874,33 @@ export const editAIImage = async (imageBase64: string, prompt: string): Promise<
         {
           inlineData: {
             data: imageBase64,
-            mimeType: 'image/png',
+            mimeType: 'image/png', // MIME 타입은 실제 데이터와 일치해야 합니다.
           },
         },
         { text: prompt },
       ],
     },
-    // 만약 config 설정이 필요하다면 여기에 추가합니다.
-    // config: { /* ... 설정 ... */ } 
-  }); 
+    // 만약 config 설정이 필요하다면 여기에 추가 (예: config: { ... } as any)
+  });
 
-  // ... 나머지 코드
-};
-
-    if (response.candidates && response.candidates[0].content.parts) {
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
-        }
+  // 3. 응답 처리 및 최종 리턴
+  if (response.candidates && response.candidates[0].content.parts) {
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        // 성공 시 데이터 URL 반환
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
     }
-    throw new Error("이미지 편집에 실패했습니다.");
+  }
+
+  // 오류 발생 시 예외 처리 (리턴 값이 없다는 오류 TS2355 해결)
+  throw new Error("이미지 편집에 실패했습니다.");
 };
 
 // --- Voice Generation ---
 
 export const generateSpeech = async (text: string, voiceName: string = 'Kore'): Promise<string> => {
     const ai = await initGoogleClient();
-    
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-preview-tts',
         contents: [{ parts: [{ text }] }],
