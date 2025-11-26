@@ -1,176 +1,103 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, AuthContextType } from '../types';
+import React, { createContext, useContext, useState } from "react";
+import type { AuthContextType, User } from "../types";
 
-const DEFAULT_TRIAL_DAYS = 14;
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  isSubscribed: false,
+  isCouponUsed: false,
+  isAdmin: false,
+  isLoading: true,
 
-const initialContextValue: AuthContextType = {
-    user: null,
-    isAuthenticated: false,
-    isSubscribed: false,
-    isLoading: true,
+  login: async () => {},
+  signup: async () => {},
+  signout: async () => {},
 
-    signIn: () => Promise.resolve(),
-    signOut: () => Promise.resolve(),
-    updateSubscriptionStatus: () => {},
+  updateSubscriptionStatus: async () => {},
+  applyCoupon: async () => true,
 
-    isAdmin: false,
-    login: () => Promise.resolve(),
-    signup: () => Promise.resolve(),
-    logout: () => Promise.resolve(),
-    changePassword: () => Promise.resolve(),
-    updateUserSubscription: () => Promise.resolve(),
-    getAllUsers: () => Promise.resolve([]),
-    deleteUser: () => Promise.resolve(),
-    applyCoupon: () => Promise.resolve(false),
-};
+  getAllUsers: async () => [],
+  deleteUser: async () => {},
+});
 
-const AuthContext = createContext<AuthContextType>(initialContextValue);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isCouponUsed, setIsCouponUsed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-/** 쿠폰 트라이얼 계산 */
-const calculateTrial = (couponUsedAt?: string): boolean => {
-    if (!couponUsedAt) return false;
-    try {
-        const start = new Date(couponUsedAt);
-        const end = new Date(start.getTime() + DEFAULT_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-        return new Date() < end;
-    } catch {
-        return false;
-    }
-};
+  const login = async (email: string, password: string) => {
+    console.log("Mock login");
+    setIsAuthenticated(true);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    setUser({
+      id: "1",
+      name: "Mock User",
+      email: email,
+      joinedAt: "2025-01-01",
+      isAdmin: false,
+    });
 
-    const [user, setUser] = useState<User | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isSubscribed, setIsSubscribed] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false);
+    setIsLoading(false);
+  };
 
-    /** 유료/쿠폰 상태 계산 */
-    const determineSubscriptionStatus = useCallback((u: User | null): boolean => {
-        if (!u) return false;
-        if (u.hasPaidSubscription) return true;
-        if (calculateTrial(u.couponUsedAt)) return true;
-        return false;
-    }, []);
+  const signup = async (email: string, password: string) => {
+    console.log("Mock signup");
+  };
 
-    /** 앱 시작 시: localStorage 에서 user 가져오기 */
-    const loadUser = useCallback(() => {
-        const stored = localStorage.getItem("auth_user");
-        if (!stored) return null;
-        try {
-            return JSON.parse(stored) as User;
-        } catch {
-            return null;
-        }
-    }, []);
+  const signout = async () => {
+    console.log("Mock signout");
+    setIsAuthenticated(false);
+    setUser(null);
+  };
 
-    /** 최초 실행 */
-    useEffect(() => {
-        const u = loadUser();
-        if (u) {
-            setUser(u);
-            setIsAuthenticated(true);
-            setIsSubscribed(determineSubscriptionStatus(u));
-            setIsAdmin(!!u.isAdmin);
-        }
-        setIsLoading(false);
-    }, [loadUser, determineSubscriptionStatus]);
+  const updateSubscriptionStatus = async () => {
+    console.log("Mock updateSubscriptionStatus");
+    setIsSubscribed(true);
+  };
 
-    /** 로그인 */
-    const signIn = useCallback(async (credentials: any) => {
-        setIsLoading(true);
+  const applyCoupon = async (couponCode: string) => {
+    console.log("Mock applyCoupon:", couponCode);
+    setIsSubscribed(true);
+    setIsCouponUsed(true);
+    return true;
+  };
 
-        // ⚠ 실제 서비스라면 서버와 통신
-        const loggedInUser: User = {
-            id: "user-" + credentials.email,
-            email: credentials.email,
-            name: credentials.email,
-            joinedAt: new Date().toISOString(),
-            isAdmin: false,
+  const getAllUsers = async () => {
+    console.log("Mock getAllUsers");
+    return [];
+  };
 
-            isCouponUsed: false,
-            couponUsedAt: undefined,
-            hasPaidSubscription: false,
-        };
+  const deleteUser = async (id: string) => {
+    console.log("Mock deleteUser", id);
+  };
 
-        localStorage.setItem("auth_user", JSON.stringify(loggedInUser));
-
-        setUser(loggedInUser);
-        setIsAuthenticated(true);
-        setIsSubscribed(false);
-        setIsAdmin(false);
-
-        setIsLoading(false);
-    }, []);
-
-    /** 로그아웃 */
-    const signOut = useCallback(async () => {
-        localStorage.removeItem("auth_user");
-        setUser(null);
-        setIsAuthenticated(false);
-        setIsSubscribed(false);
-        setIsAdmin(false);
-    }, []);
-
-    /** 쿠폰 적용 */
-    const applyCoupon = useCallback(async (couponCode: string) => {
-        if (!user) return false;
-
-        const today = new Date().toISOString().split('T')[0];
-
-        const updated: User = {
-            ...user,
-            isCouponUsed: true,
-            couponUsedAt: today
-        };
-
-        localStorage.setItem("auth_user", JSON.stringify(updated));
-
-        setUser(updated);
-        setIsSubscribed(determineSubscriptionStatus(updated));
-
-        return true;
-    }, [user, determineSubscriptionStatus]);
-
-    /** 유료 결제 완료 */
-    const updateUserSubscription = useCallback(async () => {
-        if (!user) return;
-        const updated = { ...user, hasPaidSubscription: true };
-
-        localStorage.setItem("auth_user", JSON.stringify(updated));
-
-        setUser(updated);
-        setIsSubscribed(true);
-    }, [user]);
-
-    const contextValue: AuthContextType = {
+  return (
+    <AuthContext.Provider
+      value={{
         user,
         isAuthenticated,
         isSubscribed,
+        isCouponUsed,
+        isAdmin,
         isLoading,
 
-        signIn,
-        signOut,
-        updateSubscriptionStatus: () => {},
+        login,
+        signup,
+        signout,
 
-        isAdmin,
-        login: signIn,
-        signup: signIn,
-        logout: signOut,
-
-        changePassword: async () => {},
-        updateUserSubscription,
-        getAllUsers: async () => [],
-        deleteUser: async () => {},
+        updateSubscriptionStatus,
         applyCoupon,
-    };
 
-    return (
-        <AuthContext.Provider value={contextValue}>
-            {children}
-        </AuthContext.Provider>
-    );
+        getAllUsers,
+        deleteUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);
