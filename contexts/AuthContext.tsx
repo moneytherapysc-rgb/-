@@ -16,6 +16,8 @@ export const AuthContext = createContext<AuthContextType>({
   updateSubscriptionStatus: async () => {},
   applyCoupon: async () => true,
 
+  updateUserSubscription: () => {},   // ⭐ 추가된 부분
+
   getAllUsers: async () => [],
   deleteUser: async () => {},
 });
@@ -74,6 +76,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("Mock deleteUser", id);
   };
 
+  /* ----------------------------------------
+      ⭐ 핵심: PricingModal에서 요청하는 함수 추가
+      updateUserSubscription(updatedUser)
+  ---------------------------------------- */
+  const updateUserSubscription = (updated: User) => {
+    console.log("updateUserSubscription 실행됨:", updated);
+
+    setUser(updated);
+    setIsSubscribed(true);
+    setIsCouponUsed((updated as any)?.isCouponUsed ?? false);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -90,6 +104,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         updateSubscriptionStatus,
         applyCoupon,
+
+        updateUserSubscription,   // ⭐ Provider에 등록됨
 
         getAllUsers,
         deleteUser,

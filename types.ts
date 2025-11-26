@@ -20,6 +20,7 @@ export interface AuthContextType {
 
   updateSubscriptionStatus: () => Promise<void>;
   applyCoupon: (couponCode: string) => Promise<boolean>;
+  updateUserSubscription: (updated: User) => void;
 
   getAllUsers: () => Promise<any[]>;
   deleteUser: (id: string) => Promise<void>;
