@@ -218,17 +218,40 @@ export interface VideoCategory {
 // User 인터페이스 (joinedAt 필드 포함)
 export interface User {
     id: string;
-    email: string;
     name: string;
-    password?: string;
-    joinedAt: string; // TS2741 오류 해결을 위해 필수적으로 사용되는 필드
-    subscription?: {
-        plan: 'event_launch' | '1month' | '3months' | '6months' | '12months' | 'trial';
-        status: 'active' | 'expired';
-        startDate: string;
-        endDate: string;
-    };
-    isAdmin?: boolean;
+    email: string;
+    joinedAt: string;
+    isAdmin: boolean;
+
+    // 💡 [추가되어야 할 속성들] 타입스크립트 오류 해결!
+    isCouponUsed?: boolean;       // 2주 쿠폰 사용 여부
+    couponUsedAt?: string;        // 쿠폰 사용 시작일 (YYYY-MM-DD 형식)
+    hasPaidSubscription?: boolean; // 유료 결제 구독 여부
+}
+
+// AuthContextType에도 applyCoupon 함수 정의를 추가해야 합니다.
+export interface AuthContextType {
+    user: User | null;
+    isAuthenticated: boolean;
+    isSubscribed: boolean;
+    isLoading: boolean;
+    isAdmin: boolean;
+    // ... 기존 함수들 ...
+    
+    // 💡 [추가되어야 할 함수] applyCoupon 정의
+    applyCoupon: (couponCode: string) => Promise<boolean>;
+    
+    // ... 기타 함수 ...
+    signIn: (credentials: any) => Promise<void>;
+    signOut: () => Promise<void>;
+    updateSubscriptionStatus: (status: boolean) => void;
+    login: (credentials: any) => Promise<void>;
+    signup: (data: any) => Promise<void>;
+    logout: () => Promise<void>;
+    changePassword: (data: any) => Promise<void>;
+    updateUserSubscription: (planId: string) => Promise<void>;
+    getAllUsers: () => Promise<User[]>;
+    deleteUser: (userId: string) => Promise<void>;
 }
 
 // AuthContextType 인터페이스 (모든 컴포넌트 오류 해결을 위한 타입 확장)
