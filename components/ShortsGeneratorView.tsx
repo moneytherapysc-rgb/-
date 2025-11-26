@@ -1,17 +1,26 @@
-
 import React, { useState, useEffect } from 'react';
 import { generateShortsIdeas } from '../services/youtubeService';
 import { getInstructions } from '../services/instructionService';
 import type { ShortsIdea, SystemInstruction } from '../types';
 import { LightningIcon, CopyIcon, BrainIcon } from './icons';
+import { useAuth } from '../contexts/AuthContext';
+import PaywallScreen from './PaywallScreen.tsx';
+
 
 const ShortsGeneratorView: React.FC = () => {
+    const { isSubscribed, isLoading } = useAuth(); 
+
+    // --- Paywall Protection ---
+    if (!isLoading && !isSubscribed) {
+        return <PaywallScreen />;
+    }
+
+    // --- Original Logic ---
     const [keyword, setKeyword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingIdea, setIsLoadingIdea] = useState(false);
     const [ideas, setIdeas] = useState<ShortsIdea[]>([]);
     const [error, setError] = useState<string | null>(null);
     
-    // Persona State
     const [instructions, setInstructions] = useState<SystemInstruction[]>([]);
     const [selectedInstructionId, setSelectedInstructionId] = useState<string>('');
 
@@ -26,7 +35,7 @@ const ShortsGeneratorView: React.FC = () => {
         e.preventDefault();
         if (!keyword.trim()) return;
 
-        setIsLoading(true);
+        setIsLoadingIdea(true);
         setError(null);
         setIdeas([]);
 
@@ -37,7 +46,7 @@ const ShortsGeneratorView: React.FC = () => {
         } catch (err: any) {
             setError(err.message || '아이디어 생성 중 오류가 발생했습니다.');
         } finally {
-            setIsLoading(false);
+            setIsLoadingIdea(false);
         }
     };
 
@@ -49,6 +58,7 @@ const ShortsGeneratorView: React.FC = () => {
 
     return (
         <div className="max-w-5xl mx-auto font-sans animate-fade-in-up pb-12">
+            {/* Header */}
             <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg mb-8 text-center border border-slate-200 dark:border-slate-700">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 mb-4">
                     <LightningIcon className="w-8 h-8" />
@@ -61,8 +71,8 @@ const ShortsGeneratorView: React.FC = () => {
                 </p>
             </div>
 
+            {/* Persona Selector */}
             <form onSubmit={handleGenerate} className="max-w-2xl mx-auto mb-10 space-y-4">
-                {/* Persona Selector */}
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg border border-slate-200 dark:border-slate-600 w-fit mx-auto">
                     <BrainIcon className="w-5 h-5 text-slate-500 dark:text-slate-400 ml-2" />
                     <select 
@@ -78,6 +88,7 @@ const ShortsGeneratorView: React.FC = () => {
                     </select>
                 </div>
 
+                {/* Keyword Input */}
                 <div className="relative flex items-center">
                     <input
                         type="text"
@@ -85,24 +96,26 @@ const ShortsGeneratorView: React.FC = () => {
                         onChange={(e) => setKeyword(e.target.value)}
                         placeholder="주제 키워드를 입력하세요 (예: 편의점 꿀조합, 아이폰 꿀팁)"
                         className="w-full px-6 py-4 text-lg bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-full focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 dark:text-white shadow-sm transition-all"
-                        disabled={isLoading}
+                        disabled={isLoadingIdea}
                     />
                     <button
                         type="submit"
-                        disabled={isLoading || !keyword.trim()}
+                        disabled={isLoadingIdea || !keyword.trim()}
                         className="absolute right-2 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-full transition-colors disabled:bg-slate-300 dark:disabled:bg-slate-600"
                     >
-                        {isLoading ? '생성 중...' : '대본 생성'}
+                        {isLoadingIdea ? '생성 중...' : '대본 생성'}
                     </button>
                 </div>
             </form>
 
+            {/* Error */}
             {error && (
                 <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg mb-6">
                     {error}
                 </div>
             )}
 
+            {/* Generated Ideas */}
             {ideas.length > 0 && (
                 <div className="grid gap-6">
                     {ideas.map((idea, index) => (
@@ -123,7 +136,9 @@ const ShortsGeneratorView: React.FC = () => {
                                 </div>
                                 <div>
                                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">📜 촬영 대본 (Script)</span>
-                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{idea.script}</p>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                                        {idea.script}
+                                    </p>
                                 </div>
                                 <div className="bg-slate-50 dark:bg-slate-700/30 p-3 rounded-lg">
                                     <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 block mb-1">🎥 촬영/편집 가이드</span>
@@ -134,16 +149,6 @@ const ShortsGeneratorView: React.FC = () => {
                     ))}
                 </div>
             )}
-            
-            <style>{`
-                @keyframes fade-in-up {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .animate-fade-in-up {
-                    animation: fade-in-up 0.5s ease-out forwards;
-                }
-            `}</style>
         </div>
     );
 };
