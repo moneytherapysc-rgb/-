@@ -1,4 +1,4 @@
-
+// types.ts 파일 전체 코드
 
 export interface YouTubeChannel {
   id: string;
@@ -176,21 +176,21 @@ export interface GeneratedScript {
 }
 
 export interface SummaryObject {
-    title: string;
-    coreMessage: string;
-    structure: string;
-    summaryPoints: string[];
+  title: string;
+  coreMessage: string;
+  structure: string;
+  summaryPoints: string[];
 }
 
 export interface GeneratedTitles {
-    fresh: string[];
-    stable: string[];
+  fresh: string[];
+  stable: string[];
 }
 
 export interface GeneratedThumbnailText {
-    emotional: string[];
-    informational: string[];
-    visual: string[];
+  emotional: string[];
+  informational: string[];
+  visual: string[];
 }
 
 export interface TrendingKeyword {
@@ -211,15 +211,18 @@ export interface RisingCreator {
 }
 
 export interface VideoCategory {
-    id: string;
-    title: string;
+  id: string;
+  title: string;
 }
 
+/**
+ * [추가] 사용자 정보를 담는 기본 타입
+ */
 export interface User {
   id: string;
   email: string;
   name: string;
-  password?: string; 
+  password?: string;
   joinedAt: string;
   subscription?: {
     plan: 'event_launch' | '1month' | '3months' | '6months' | '12months' | 'trial';
@@ -230,51 +233,64 @@ export interface User {
   isAdmin?: boolean;
 }
 
+/**
+ * [추가] AuthContext가 제공하는 값의 타입 정의
+ */
+export interface AuthContextType {
+  user: User | null; // 현재 인증된 사용자 정보
+  isAuthenticated: boolean; // 로그인 상태
+  isSubscribed: boolean; // 구독 상태
+  isLoading: boolean; // 초기 인증 상태 로딩 중인지 여부
+  signIn: (credentials: any) => Promise<void>; // 로그인 함수
+  signOut: () => Promise<void>; // 로그아웃 함수
+  updateSubscriptionStatus: (status: boolean) => void; // 구독 상태 업데이트 함수
+}
+
 export interface Coupon {
-    id: string;
-    code: string;
-    durationMonths: 0.5 | 1 | 3 | 6 | 12; // 0.5 for 2 weeks trial
-    isUsed: boolean;
-    createdAt: string;
-    usedBy?: string;
-    usedAt?: string;
+  id: string;
+  code: string;
+  durationMonths: 0.5 | 1 | 3 | 6 | 12; // 0.5 for 2 weeks trial
+  isUsed: boolean;
+  createdAt: string;
+  usedBy?: string;
+  usedAt?: string;
 }
 
 export interface SubscriptionPlan {
-    id: 'event_launch' | '1month' | '3months' | '6months' | '12months';
-    name: string;
-    price: number;
-    durationMonths: number;
-    discount?: number; // percentage
-    description?: string;
+  id: 'event_launch' | '1month' | '3months' | '6months' | '12months';
+  name: string;
+  price: number;
+  durationMonths: number;
+  discount?: number; // percentage
+  description?: string;
 }
 
 export interface SystemInstruction {
-    id: string;
-    name: string;
-    content: string;
-    isActive: boolean;
+  id: string;
+  name: string;
+  content: string;
+  isActive: boolean;
 }
 
 export interface GoogleTrendItem {
-    rank: number;
-    keyword: string;
-    searchVolume: string;
-    growthRate: string;
-    startedAt: string;
-    trendStatus: string; // e.g. '활성', '계속됨'
-    relatedQueries: string[];
-    graphData: number[]; // Array of numbers for sparkline
+  rank: number;
+  keyword: string;
+  searchVolume: string;
+  growthRate: string;
+  startedAt: string;
+  trendStatus: string; // e.g. '활성', '계속됨'
+  relatedQueries: string[];
+  graphData: number[]; // Array of numbers for sparkline
 }
 
 export interface KeywordAnalysisResult {
-    relatedKeywords: string[];
-    volumes: Array<{
-        keyword: string;
-        pcVolume: number;
-        mobileVolume: number;
-        totalVolume: number;
-    }>;
+  relatedKeywords: string[];
+  volumes: Array<{
+    keyword: string;
+    pcVolume: number;
+    mobileVolume: number;
+    totalVolume: number;
+  }>;
 }
 
 export interface ThumbnailAnalysisResult {
@@ -332,67 +348,67 @@ export interface FavoriteItem {
 }
 
 export interface BattleStats {
-    subscribers: number;
-    totalViews: number;
-    avgViews: number;
-    engagementRate: number; // (Likes + Comments) / Views
-    uploadFrequency: number; // Videos per month (approx)
-    videoCount: number;
-    powerScore: number; // 0-1000
+  subscribers: number;
+  totalViews: number;
+  avgViews: number;
+  engagementRate: number; // (Likes + Comments) / Views
+  uploadFrequency: number; // Videos per month (approx)
+  videoCount: number;
+  powerScore: number; // 0-1000
 }
 
 export interface ChannelBattleResult {
-    channelA: YouTubeChannel;
-    channelB: YouTubeChannel;
-    statsA: BattleStats;
-    statsB: BattleStats;
-    winner: 'A' | 'B' | 'Tie';
-    radarData: Array<{
-        subject: string;
-        A: number;
-        B: number;
-        fullMark: number;
-    }>;
+  channelA: YouTubeChannel;
+  channelB: YouTubeChannel;
+  statsA: BattleStats;
+  statsB: BattleStats;
+  winner: 'A' | 'B' | 'Tie';
+  radarData: Array<{
+    subject: string;
+    A: number;
+    B: number;
+    fullMark: number;
+  }>;
 }
 
 export interface ShortsIdea {
-    title: string;
-    hook: string; // 3초 훅
-    script: string; // 실제 대본 (구어체)
-    visualGuide: string; // 촬영/편집 가이드
+  title: string;
+  hook: string; // 3초 훅
+  script: string; // 실제 대본 (구어체)
+  visualGuide: string; // 촬영/편집 가이드
 }
 
 export interface Notice {
-    id: string;
-    title: string;
-    content: string;
-    createdAt: string;
-    author: string;
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  author: string;
 }
 
 export interface TrendRankItem {
-    rank: number;
-    keyword: string;
-    searchVolume?: string;
-    status?: 'new' | 'up' | 'down' | 'same';
+  rank: number;
+  keyword: string;
+  searchVolume?: string;
+  status?: 'new' | 'up' | 'down' | 'same';
 }
 
 export interface TrendInsightResult {
-    naver: TrendRankItem[];
-    google: TrendRankItem[];
+  naver: TrendRankItem[];
+  google: TrendRankItem[];
 }
 
 export interface CalendarTrendEvent {
-    date: string; // YYYY-MM-DD
-    event: string;
-    category: 'holiday' | 'trend' | 'season' | 'release';
-    intensity: 'High' | 'Medium' | 'Low';
+  date: string; // YYYY-MM-DD
+  event: string;
+  category: 'holiday' | 'trend' | 'season' | 'release';
+  intensity: 'High' | 'Medium' | 'Low';
 }
 
 export interface ScheduledContent {
-    id: string;
-    date: string; // YYYY-MM-DD
-    title: string;
-    description?: string;
-    status: 'idea' | 'planned' | 'filming' | 'editing' | 'uploaded';
+  id: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  description?: string;
+  status: 'idea' | 'planned' | 'filming' | 'editing' | 'uploaded';
 }
