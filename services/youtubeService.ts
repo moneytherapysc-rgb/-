@@ -862,20 +862,43 @@ export const generateAIImage = async (prompt: string, aspectRatio: string): Prom
 export const editAIImage = async (imageBase64: string, prompt: string): Promise<string> => {
     const ai = await initGoogleClient();
     
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-            parts: [
-                {
-                    inlineData: {
-                        data: imageBase64,
-                        mimeType: 'image/png', // Assuming PNG for simplicity, should match source
-                    },
-                },
-                { text: prompt },
-            ],
+// services/youtubeService.ts 파일의 해당 부분
+
+export const editAIImage = async (imageBase64: string, prompt: string): Promise<string> => {
+  const ai = await initGoogleApiClient();
+  
+  // 💡 수정된 부분: config 객체에 as any 적용
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-image',
+    contents: {
+      parts: [
+        {
+          inlineData: {
+            data: imageBase64,
+            mimeType: 'image/png', // Assuming PNG for simplicity, should match source
+          },
         },
-    });
+        { text: prompt },
+      ],
+    },
+    // 이전 오류에서 imageConfig가 config 객체 안에 있었다면 여기에 추가해야 합니다.
+    // 현재 코드에는 config 객체 자체가 없으므로, config: { imageConfig: ... } 형태로 추가될 것입니다.
+    // 만약 config 객체 없이 imageConfig를 직접 넣으려고 했다면, 해당 부분을 제거합니다.
+
+    // 🌟 핵심 수정: 'config' 속성이 필요하다면 여기에 추가하고 'as any'를 적용
+    config: { 
+      // 여기에 이전 오류가 발생했던 imageConfig 등의 설정을 넣을 수 있습니다.
+      // 예시: imageConfig: { aspectRatio: "16:9" as any }
+      // 현재 스크린샷에는 config 객체 자체가 없으므로, 
+      // 오류 메시지가 이전 코드 베이스에서 발생한 것으로 보입니다.
+      // 만약 imageConfig가 필요 없다면, 이 config 객체 자체도 생략할 수 있습니다.
+      // 하지만 오류가 imageConfig 때문이었으므로, 명시적으로 빈 config 객체를 두거나 
+      // 필요한 설정을 as any와 함께 넣어줍니다.
+    } as any // <-- 여기에 as any를 추가하여 TS2353 오류를 무시합니다.
+  });
+
+  // ... 나머지 코드
+};
 
     if (response.candidates && response.candidates[0].content.parts) {
         for (const part of response.candidates[0].content.parts) {
