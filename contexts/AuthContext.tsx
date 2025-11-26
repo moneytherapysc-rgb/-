@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, AuthContextType } from '../types'; // types 임포트에서 확장자 제거
+import { User, AuthContextType } from '../types'; // types 임포트
 
-// 초기 Context 값은 사용될 때 반드시 덮어쓰여야 하므로, 
-// 타입 추론을 위해 AuthContextType을 따르되, 사용되지 않는 함수는 빈 함수로 정의합니다.
+// 초기 Context 값 정의
 const initialContextValue: AuthContextType = {
     user: null,
     isAuthenticated: false,
@@ -11,7 +10,7 @@ const initialContextValue: AuthContextType = {
     signIn: () => Promise.resolve(),
     signOut: () => Promise.resolve(),
     updateSubscriptionStatus: () => {},
-    // 👇👇👇 1. initialContextValue에 추가된 항목 👇👇👇
+    // 👇👇👇 types.ts 확장에 맞춰 추가된 초기값 👇👇👇
     isAdmin: false, 
     login: () => Promise.resolve(), 
     signup: () => Promise.resolve(),
@@ -20,7 +19,7 @@ const initialContextValue: AuthContextType = {
     updateUserSubscription: () => Promise.resolve(),
     getAllUsers: () => Promise.resolve([] as User[]), 
     deleteUser: () => Promise.resolve(),
-    // 👆👆👆 1. initialContextValue에 추가된 항목 👆👆👆
+    // 👆👆👆 types.ts 확장에 맞춰 추가된 초기값 👆👆👆
 };
 
 const AuthContext = createContext<AuthContextType>(initialContextValue);
@@ -33,7 +32,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false); // 👈 2. isAdmin 상태 추가
+    const [isAdmin, setIsAdmin] = useState(false); // 👈 isAdmin 상태 추가
 
     // 가상의 인증 및 구독 상태 로딩 로직
     useEffect(() => {
@@ -46,16 +45,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 name: 'Traveler', 
                 email: 'user@example.com',
                 joinedAt: '2025-11-26', // 👈 TS2741 오류 해결
-                isAdmin: true, // Mock User에게 관리자 권한 부여
+                isAdmin: false, // Mock User에게 관리자 권한 부여
             };
-            const isUserLoggedIn = !!mockUser; // 예시: 항상 로그인되어 있다고 가정
+            const isUserLoggedIn = !!mockUser; 
 
             if (isUserLoggedIn) {
                 setUser(mockUser);
                 setIsAuthenticated(true);
                 
                 // 구독 상태 체크
-                // 'free-trial' 대신 'trial'을 사용하도록 가정하고, Mock 데이터를 설정합니다.
                 const userSubscriptionStatus = true; // 예시: 현재는 구독 상태라고 가정
                 setIsSubscribed(userSubscriptionStatus);
                 setIsAdmin(mockUser.isAdmin || false); // 관리자 상태 설정
@@ -107,8 +105,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // 서버 측 상태 업데이트 로직이 있다면 여기에 추가
     }, []);
 
-    // 👇👇👇 3. 새로 추가된 함수들 구현 (TS2339 오류 해결) 👇👇👇
-    // signIn, signOut과 중복되는 login/logout은 별칭으로 사용
+    // 👇👇👇 TS2339 오류 해결을 위한 함수 구현 👇👇👇
+    
+    // login/logout은 signIn/signOut의 별칭으로 사용
     const login = signIn;
     const logout = signOut; 
 
@@ -117,7 +116,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log('User signed up:', data);
         // 성공 시 로그인 상태로 전환하는 로직 필요
-    }, [signIn]); // signIn을 사용한다면 의존성 배열에 추가
+    }, [signIn]); 
 
     // changePassword 함수 구현 (임시)
     const changePassword = useCallback(async (data: any) => {
@@ -144,9 +143,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log('User deleted:', userId);
     }, []);
-    // 👆👆👆 3. 새로 추가된 함수들 구현 👆👆👆
+    // 👆👆👆 TS2339 오류 해결을 위한 함수 구현 👆👆👆
 
-    // 4. contextValue에 새로 추가된 함수와 상태를 모두 포함
+
+    // contextValue에 모든 상태와 함수를 포함
     const contextValue: AuthContextType = {
         user,
         isAuthenticated,
