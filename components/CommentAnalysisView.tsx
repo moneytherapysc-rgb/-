@@ -1,11 +1,49 @@
-
 import React, { useState } from 'react';
-import { getVideoComments, analyzeCommentSentiment, initGoogleClient } from '../services/youtubeService';
-import type { CommentAnalysisResult } from '../types';
-import { ChatBubbleIcon, CheckCircleIcon } from './icons';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import ProtectedRoute from '../components/ProtectedRoute';
 
+import { 
+    getVideoComments, 
+    analyzeCommentSentiment, 
+    initGoogleClient 
+} from '../services/youtubeService';
+
+import type { CommentAnalysisResult } from '../types';
+
+import { 
+    ChatBubbleIcon, 
+    CheckCircleIcon 
+} from './icons';
+
+import { 
+    PieChart, 
+    Pie, 
+    Cell, 
+    ResponsiveContainer, 
+    Tooltip 
+} from 'recharts';
+
+
+
+// ------------------------------------------------------
+// 1) 최상위 컴포넌트: 유료권한 잠금 처리
+// ------------------------------------------------------
 const CommentAnalysisView: React.FC = () => {
+    return (
+        <ProtectedRoute 
+            requiredPlan="pro"
+            fallback="paywall"
+        >
+            <Content />
+        </ProtectedRoute>
+    );
+};
+
+
+
+// ------------------------------------------------------
+// 2) 실제 페이지 UI — 기존 내용 그대로 유지
+// ------------------------------------------------------
+const Content: React.FC = () => {
     const [videoUrl, setVideoUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<CommentAnalysisResult | null>(null);
@@ -32,7 +70,6 @@ const CommentAnalysisView: React.FC = () => {
         setResult(null);
 
         try {
-            // Ensure client is initialized for comment fetching
             await initGoogleClient();
             
             const comments = await getVideoComments(videoId);
@@ -49,6 +86,8 @@ const CommentAnalysisView: React.FC = () => {
         }
     };
 
+
+    // ------------------- 내부 차트 컴포넌트 -------------------
     const SentimentChart: React.FC<{ sentiment: CommentAnalysisResult['sentiment'] }> = ({ sentiment }) => {
         const data = [
             { name: '긍정', value: sentiment.positive, color: '#10b981' },
@@ -76,14 +115,21 @@ const CommentAnalysisView: React.FC = () => {
                         <Tooltip formatter={(value: number) => `${value}%`} />
                     </PieChart>
                 </ResponsiveContainer>
+
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                    <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">{sentiment.positive}%</span>
+                    <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                        {sentiment.positive}%
+                    </span>
                     <p className="text-xs text-slate-500 dark:text-slate-400">긍정 비율</p>
                 </div>
             </div>
         );
     };
 
+
+
+
+    // ------------------- 실제 JSX 렌더링 -------------------
     return (
         <div className="max-w-5xl mx-auto font-sans animate-fade-in-up">
             <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg mb-8 border border-slate-200 dark:border-slate-700">
@@ -99,7 +145,10 @@ const CommentAnalysisView: React.FC = () => {
                     </p>
                 </div>
 
-                <form onSubmit={handleAnalyze} className="max-w-2xl mx-auto flex shadow-md rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-600 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+                <form 
+                    onSubmit={handleAnalyze} 
+                    className="max-w-2xl mx-auto flex shadow-md rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-600 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all"
+                >
                     <input
                         type="text"
                         value={videoUrl}
@@ -131,28 +180,45 @@ const CommentAnalysisView: React.FC = () => {
 
             {result && (
                 <div className="space-y-6 animate-fade-in-up">
-                    {/* Top Summary & Sentiment */}
+                    {/* Sentiment + Keywords */}
                     <div className="grid md:grid-cols-3 gap-6">
+
+                        {/* 감정 분석 */}
                         <div className="md:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 text-center">감정 분석</h3>
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 text-center">
+                                감정 분석
+                            </h3>
                             <SentimentChart sentiment={result.sentiment} />
                             <div className="flex justify-center gap-4 mt-4 text-sm font-medium">
-                                <span className="text-green-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span>긍정</span>
-                                <span className="text-slate-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400"></span>중립</span>
-                                <span className="text-red-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>부정</span>
+                                <span className="text-green-600 flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>긍정
+                                </span>
+                                <span className="text-slate-500 flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>중립
+                                </span>
+                                <span className="text-red-600 flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>부정
+                                </span>
                             </div>
                         </div>
-                        
+
+                        {/* 키워드 + AI 한줄평 */}
                         <div className="md:col-span-2 flex flex-col gap-6">
-                             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex-grow">
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">베스트 키워드</h3>
+                            
+                            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex-grow">
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
+                                    베스트 키워드
+                                </h3>
                                 <div className="flex flex-wrap gap-2">
                                     {result.keywords.map((keyword, i) => (
-                                        <span key={i} className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                                            i < 3 
-                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-base'
-                                            : 'bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300'
-                                        }`}>
+                                        <span 
+                                            key={i} 
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                                                i < 3 
+                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-base'
+                                                : 'bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300'
+                                            }`}
+                                        >
                                             #{keyword}
                                         </span>
                                     ))}
@@ -160,7 +226,9 @@ const CommentAnalysisView: React.FC = () => {
                             </div>
                             
                             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 flex flex-col justify-center">
-                                <h3 className="text-sm font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-2">AI 한줄 평</h3>
+                                <h3 className="text-sm font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-2">
+                                    AI 한줄 평
+                                </h3>
                                 <p className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-relaxed">
                                     "{result.summary.oneLine}"
                                 </p>
@@ -176,7 +244,10 @@ const CommentAnalysisView: React.FC = () => {
                             </h3>
                             <ul className="space-y-3">
                                 {result.summary.pros.map((item, i) => (
-                                    <li key={i} className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
+                                    <li 
+                                        key={i} 
+                                        className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg"
+                                    >
                                         <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5"/>
                                         <span className="text-slate-700 dark:text-slate-200 text-sm">{item}</span>
                                     </li>
@@ -190,7 +261,10 @@ const CommentAnalysisView: React.FC = () => {
                             </h3>
                             <ul className="space-y-3">
                                 {result.summary.cons.map((item, i) => (
-                                    <li key={i} className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                                    <li 
+                                        key={i} 
+                                        className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg"
+                                    >
                                         <i className="fas fa-exclamation-circle w-5 h-5 text-red-500 flex-shrink-0 mt-1"></i>
                                         <span className="text-slate-700 dark:text-slate-200 text-sm">{item}</span>
                                     </li>

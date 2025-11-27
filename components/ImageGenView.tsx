@@ -1,11 +1,11 @@
-
 import React, { useState, useRef } from 'react';
 import { generateAIImage, editAIImage, fileToBase64 } from '../services/youtubeService';
 import { PaletteIcon, MagicWandIcon, PhotoIcon, UploadIcon, CheckCircleIcon, LightningIcon, PencilIcon } from './icons';
+import ProtectedRoute from './ProtectedRoute'; // 🔥 핵심 추가
 
 type Mode = 'create' | 'edit';
 
-const ImageGenView: React.FC = () => {
+const ImageGenViewContent: React.FC = () => {
     const [mode, setMode] = useState<Mode>('create');
     
     // Creation State
@@ -88,6 +88,7 @@ const ImageGenView: React.FC = () => {
 
     return (
         <div className="max-w-6xl mx-auto pb-12 font-sans animate-fade-in-up">
+
             {/* Header */}
             <div className="text-center mb-10 pt-8">
                 <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-900/50 border border-indigo-500/30 text-indigo-300 text-xs font-bold mb-4 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
@@ -105,9 +106,11 @@ const ImageGenView: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
                 {/* Control Panel */}
                 <div className="lg:col-span-5 space-y-6">
                     <div className="bg-[#1e293b] rounded-2xl p-6 border border-slate-700 shadow-2xl">
+
                         {/* Tabs */}
                         <div className="flex p-1 bg-slate-900 rounded-xl mb-6">
                             <button 
@@ -116,6 +119,7 @@ const ImageGenView: React.FC = () => {
                             >
                                 <PaletteIcon className="w-4 h-4" /> 이미지 생성
                             </button>
+
                             <button 
                                 onClick={() => { setMode('edit'); setResultImage(null); }}
                                 className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${mode === 'edit' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
@@ -124,8 +128,11 @@ const ImageGenView: React.FC = () => {
                             </button>
                         </div>
 
+                        {/* CREATE MODE */}
                         {mode === 'create' ? (
                             <div className="space-y-6">
+
+                                {/* Aspect Ratio */}
                                 <div>
                                     <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">화면 비율</label>
                                     <div className="grid grid-cols-5 gap-2">
@@ -141,6 +148,7 @@ const ImageGenView: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {/* Prompt */}
                                 <div>
                                     <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">프롬프트 입력</label>
                                     <textarea 
@@ -151,6 +159,7 @@ const ImageGenView: React.FC = () => {
                                     />
                                 </div>
 
+                                {/* Style */}
                                 <div>
                                     <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">스타일 (선택)</label>
                                     <div className="flex flex-wrap gap-2">
@@ -166,6 +175,7 @@ const ImageGenView: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {/* Generate Button */}
                                 <button 
                                     onClick={handleGenerate}
                                     disabled={isLoading || !prompt.trim()}
@@ -178,8 +188,12 @@ const ImageGenView: React.FC = () => {
                                     )}
                                 </button>
                             </div>
+
                         ) : (
+                        /* EDIT MODE */
                             <div className="space-y-6">
+
+                                {/* Upload */}
                                 <div>
                                     <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">원본 이미지 업로드</label>
                                     <div 
@@ -203,23 +217,19 @@ const ImageGenView: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {/* Edit Prompt */}
                                 <div>
                                     <label className="text-xs font-bold text-slate-400 uppercase mb-3 block">편집 명령 (프롬프트)</label>
-                                    <div className="relative">
-                                        <input 
-                                            type="text"
-                                            value={editPrompt}
-                                            onChange={(e) => setEditPrompt(e.target.value)}
-                                            placeholder="예: 선글라스 씌워줘, 배경을 우주로 바꿔줘"
-                                            className="w-full pl-4 pr-20 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
-                                        />
-                                        <button className="absolute right-2 top-2 bg-slate-800 text-xs font-bold text-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-700">
-                                            추가
-                                        </button>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-2">* 'AI 매직'이 문맥을 이해하여 이미지를 자연스럽게 수정합니다.</p>
+                                    <input 
+                                        type="text"
+                                        value={editPrompt}
+                                        onChange={(e) => setEditPrompt(e.target.value)}
+                                        placeholder="예: 선글라스 씌워줘, 배경을 우주로 바꿔줘"
+                                        className="w-full pl-4 pr-20 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                                    />
                                 </div>
 
+                                {/* Edit Button */}
                                 <button 
                                     onClick={handleEdit}
                                     disabled={isLoading || !editImage || !editPrompt.trim()}
@@ -230,34 +240,9 @@ const ImageGenView: React.FC = () => {
                             </div>
                         )}
                     </div>
-
-                    {/* Feature Cards */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-[#1e293b] p-4 rounded-xl border border-slate-700 text-center">
-                            <div className="w-8 h-8 bg-indigo-900/50 text-indigo-400 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                <LightningIcon className="w-5 h-5" />
-                            </div>
-                            <h4 className="text-white font-bold text-xs mb-1">초고속 생성</h4>
-                            <p className="text-[10px] text-slate-500">Gemini 2.5 Flash 모델 사용</p>
-                        </div>
-                        <div className="bg-[#1e293b] p-4 rounded-xl border border-slate-700 text-center">
-                            <div className="w-8 h-8 bg-purple-900/50 text-purple-400 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                <PhotoIcon className="w-5 h-5" />
-                            </div>
-                            <h4 className="text-white font-bold text-xs mb-1">다양한 화풍</h4>
-                            <p className="text-[10px] text-slate-500">실사, 수채화, 3D 렌더링 등</p>
-                        </div>
-                        <div className="bg-[#1e293b] p-4 rounded-xl border border-slate-700 text-center">
-                            <div className="w-8 h-8 bg-blue-900/50 text-blue-400 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                <PencilIcon className="w-5 h-5" />
-                            </div>
-                            <h4 className="text-white font-bold text-xs mb-1">스마트 에디터</h4>
-                            <p className="text-[10px] text-slate-500">자연어 명령으로 편집 가능</p>
-                        </div>
-                    </div>
                 </div>
 
-                {/* Result Display */}
+                {/* Result */}
                 <div className="lg:col-span-7">
                     <div className="h-full min-h-[500px] bg-[#0f172a] rounded-2xl border-2 border-dashed border-slate-800 flex flex-col items-center justify-center relative overflow-hidden">
                         {isLoading ? (
@@ -270,15 +255,17 @@ const ImageGenView: React.FC = () => {
                                     </div>
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-2">AI가 이미지를 그리고 있습니다...</h3>
-                                <p className="text-slate-400">잠시만 기다려주세요. 놀라운 결과물을 준비 중입니다.</p>
+                                <p className="text-slate-400">잠시만 기다려주세요.</p>
                             </div>
                         ) : resultImage ? (
                             <div className="relative w-full h-full p-4 flex items-center justify-center group">
                                 <img 
                                     src={resultImage} 
-                                    alt="AI Generated" 
-                                    className="max-w-full max-h-full rounded-lg shadow-2xl object-contain" 
+                                    alt="AI Generated"
+                                    className="max-w-full max-h-full rounded-lg shadow-2xl object-contain"
                                 />
+
+                                {/* Download */}
                                 <div className="absolute bottom-8 flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <a 
                                         href={resultImage} 
@@ -293,25 +280,27 @@ const ImageGenView: React.FC = () => {
                             <div className="text-center opacity-30 select-none">
                                 <PhotoIcon className="w-24 h-24 mx-auto mb-4" />
                                 <h3 className="text-2xl font-bold">결과가 여기에 표시됩니다</h3>
-                                <p className="mt-2">왼쪽 패널에서 설정을 마치고<br/>'생성하기' 버튼을 누르세요.</p>
                             </div>
                         )}
-                        
-                        {/* Background Effect */}
-                        {!resultImage && !isLoading && (
-                            <div className="absolute inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-                        )}
+
                     </div>
+
+                    {error && (
+                        <div className="mt-6 p-4 bg-red-900/50 border border-red-800 rounded-xl text-red-200 text-center max-w-2xl mx-auto">
+                            <i className="fas fa-exclamation-circle mr-2"></i> {error}
+                        </div>
+                    )}
                 </div>
             </div>
-
-            {error && (
-                <div className="mt-6 p-4 bg-red-900/50 border border-red-800 rounded-xl text-red-200 text-center max-w-2xl mx-auto">
-                    <i className="fas fa-exclamation-circle mr-2"></i> {error}
-                </div>
-            )}
         </div>
     );
 };
 
-export default ImageGenView;
+/* 🔥 ProtectedRoute 래퍼로 감싸서 export */
+const ImageGenViewProtected = () => (
+    <ProtectedRoute requireSubscription>
+        <ImageGenViewContent />
+    </ProtectedRoute>
+);
+
+export default ImageGenViewProtected;
